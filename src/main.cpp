@@ -2,8 +2,11 @@
 #include <ArduinoJson.h>
 #include "Streaming.h"
 
+const unsigned int ANALOG_MAX = 65535;
 uint8_t voltage_pins[] = {26, 27};
+const float voltage_conversion[] = {6.0/ANALOG_MAX, 3.73/ANALOG_MAX};
 uint8_t current_pins[] = {28};
+const float current_conversion[] = {5.0/ANALOG_MAX};
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -26,21 +29,18 @@ void loop() {
     JsonArray voltages = doc.createNestedArray("voltages");
     JsonArray currents = doc.createNestedArray("currents");
 
-    Serial.println("Ping");
-    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(500);               // wait for half a second
-    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-    delay(500);               // wait for half a second
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    delay(200);               // wait for half a second
 
     for (unsigned int i = 0; i < sizeof(voltage_pins); ++i) {
-        int value = analogRead(voltage_pins[i]);
+        int int_value = analogRead(voltage_pins[i]);
+        float value = voltage_conversion[i] * static_cast<float>(int_value);
         voltages.add(value);
-        Serial << "Voltage value " << i << " = " << value << endl;
     }
     for (unsigned int i = 0; i < sizeof(current_pins); ++i) {
-        int value = analogRead(current_pins[i]);
+        int int_value = analogRead(current_pins[i]);
+        float value = current_conversion[i] * static_cast<float>(int_value);
         currents.add(value);
-        Serial << "Current value " << i << " = " << value << endl;
     }
     serializeJson(doc, Serial);
     Serial.println();
