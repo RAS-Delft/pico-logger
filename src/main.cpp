@@ -2,11 +2,14 @@
 #include <ArduinoJson.h>
 #include "Streaming.h"
 
-const unsigned int ANALOG_MAX = 65535;
+const double ANALOG_MAX = 1023;
+const double NOM_VOLTAGE = 3.3;
+const double scaler = NOM_VOLTAGE/ANALOG_MAX;
 uint8_t voltage_pins[] = {26, 27};
-const float voltage_conversion[] = {6.0/ANALOG_MAX, 3.73/ANALOG_MAX};
+const double voltage_conversion[] = {7.8/1.0 * scaler, 1.0 * scaler};
 uint8_t current_pins[] = {28};
-const float current_conversion[] = {5.0/ANALOG_MAX};
+const double current_conversion[] = {1680.0/1000.0 * scaler / 0.185};
+const double current_bias[] = {-2.456 / 0.185};
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -34,12 +37,12 @@ void loop() {
 
     for (unsigned int i = 0; i < sizeof(voltage_pins); ++i) {
         int int_value = analogRead(voltage_pins[i]);
-        float value = voltage_conversion[i] * static_cast<float>(int_value);
+        double value = voltage_conversion[i] * static_cast<double>(int_value);
         voltages.add(value);
     }
     for (unsigned int i = 0; i < sizeof(current_pins); ++i) {
         int int_value = analogRead(current_pins[i]);
-        float value = current_conversion[i] * static_cast<float>(int_value);
+        double value = current_conversion[i] * static_cast<double>(int_value) + current_bias[i];
         currents.add(value);
     }
     serializeJson(doc, Serial);
