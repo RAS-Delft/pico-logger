@@ -11,8 +11,8 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, Float32
 
 
-VESSEL_ID = os.environ.get("VESSEL_ID", "unknown vessel")
-if VESSEL_ID == "unknown vessel":
+VESSEL_ID = os.environ.get("VESSEL_ID", "unknown_vessel")
+if VESSEL_ID == "unknown_vessel":
     warnings.warn("VESSEL_ID is not set in environment variables!")
 
 
@@ -21,12 +21,12 @@ class PicoLogger(Node):
         super(PicoLogger, self).__init__(f"{VESSEL_ID}_pico_logger")
 
         self.get_logger().info("Start setting up subscribers and publishers")
-        self.pub = self.create_publisher(Float32, f'/{VESSEL_ID}/electric-measurements', 10)
+        self.pub = self.create_publisher(Float32MultiArray, f'/{VESSEL_ID}/electric_measurements', 10)
 
         self.get_logger().info("Done setting up subscribers and publishers")
         self.get_logger().info("Running main loop now")
 
-        self.ser = serial.Serial("COM4", 115200, timeout=0.1)
+        self.ser = serial.Serial("/dev/ttyACM0", 115200, timeout=0.1)
 
         self._influx_host = os.environ.get("INFLUX_HOST", None)
         self._influx_user = os.environ.get("INFLUX_USER", "ras")
@@ -55,7 +55,8 @@ class PicoLogger(Node):
         msg_to_send.data = l
         self.pub.publish(msg_to_send)
 
-        fields = {f"voltage_{i}": val for i, val in enumerate(d['voltages'])} | {f"current_{i}": val for i, val in enumerate(d['currents'])}
+        fields = {f"voltage_{i}": val for i, val in enumerate(d['voltages'])}
+        fields.update({f"current_{i}": val for i, val in enumerate(d['currents'])})
 
         point = {
             "measurement": "vessel_electric_measurement",
